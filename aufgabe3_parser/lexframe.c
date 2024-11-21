@@ -26,6 +26,11 @@ int initLex(char* fname)
   return (int)pIF;
 }
 
+const char* keyWords[]={ 
+            "BEGIN", "CALL", "CONST", "DO", "END", "IF", "ODD", "PROCEDURE", "THEN", "VAR",
+            "WHILE"
+};
+ 
 
 
 
@@ -80,27 +85,28 @@ tMorph* Lex(void)
   pBuf=vBuf;
   Ende=0;
   Z=0;
+  //printf("Morph.MC %d ",Morph.MC);
   do
   {
-    printf("in lex: %c ",X);
+    /*printf("in lex: %c ",X);
     printf("akt Zustand: %d\n", Z);
     if(X==EOF && Z==0) {
+      printf("EOF");
       Morph.MC=mcSymb;
       Morph.Val.Symb=-1;
       return &Morph;
-    }
+    }*/
   
     /* Berechnung des Folgezustands */
     Zn=   vSMatrix[Z][vZKl[X&0x7f]].zustand;
     /* Ausfuehrung der Aktion (Ausgabefunktion */
-    vfx[((vSMatrix[Z][vZKl[X&0x7f]])).aktion]();
+    vfx[((vSMatrix[Z][vZKl[X&0x7f]])).aktion]();//call to lesen,schrieben function
     /* Automat schaltet */
     Z=Zn;
-  
   }while (Ende==0);
   return &Morph;
 }
-
+/*what happens when leerzeichen wird gelesen*/
 
 
 
@@ -146,18 +152,53 @@ static void fb ()
   case 2:
         int i=0;
         for (i;i< sizeof(keyWords)/sizeof(keyWords[0]);i++) {
+          //printf("VBuf %s",vBuf);
           if (strcmp(vBuf,keyWords[i])==0) break;
         }
-
-        
-
-        Morph.Val.pStr=vBuf;
-        Morph.MC =mcIdent;
+if (i <sizeof(keyWords)/sizeof(keyWords[0])) 
+        {
+          //printf("Schlüsselwort gefunden \n");
+          Morph.Val.Symb=zBGN+i;
+          Morph.MC=mcSymb;  //signalisiert, dass es sich um ein Schlüsselwort handelt.
+        }
+        else
+        {
+          Morph.Val.pStr=vBuf;
+          Morph.MC =mcIdent;
+        }
         break;
   /* Symbol */
   case 3: // :
+      //printf("Case 3 wird aufgerufen \n");
+      //printf("X is %c \n",X);
+      if (X == '=') { // Überprüfen, ob ein Gleichheitszeichen folgt
+      fl(); // Nächstes Zeichen lesen
+      Morph.Val.Symb = zERG; // Zuweisungsoperator `:=`
+    } else {
+      Morph.Val.Symb = ':'; // Einfacher Doppelpunkt
+    }
+      Morph.MC = mcSymb; // Symbol-Morphem
+      break;
   case 4: // <
+      if (X == '=') { // Überprüfen, ob ein Gleichheitszeichen folgt
+      fl(); // Nächstes Zeichen lesen
+      Morph.Val.Symb = zLE; // Zuweisungsoperator `:=`
+    } else {
+      Morph.Val.Symb = ':'; // Einfacher Doppelpunkt
+    }
+      Morph.MC = mcSymb; // Symbol-Morphem
+      break;
+
   case 5: // >
+      if (X == '=') { // Überprüfen, ob ein Gleichheitszeichen folgt
+      fl(); // Nächstes Zeichen lesen
+      Morph.Val.Symb = zGE; // Zuweisungsoperator `:=`
+    } else {
+      Morph.Val.Symb = ':'; // Einfacher Doppelpunkt
+    }
+      Morph.MC = mcSymb; // Symbol-Morphem
+      break;
+
   case 0:Morph.Val.Symb=vBuf[0];
   Morph.MC =mcSymb;
   break;

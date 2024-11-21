@@ -1,4 +1,12 @@
-typedef enum T_MC{mcEmpty, mcSymb, mcNum, mcIdent}tMC;
+#include "lex.h"
+typedef enum BOGEN_DESC
+{
+    BgNl= 0, // NIL
+    BgSy= 1, // Symbol
+    BgMo= 2, // Morphem
+    BgGr= 4, // Graph
+    BgEn= 8,// Graphende (altenativ 0 oder -1 als Folgebogen)
+ }tBg;
 
 typedef struct BOGEN
 {
@@ -17,12 +25,5 @@ typedef struct BOGEN
     // Alternativbogen gibt.
 }tBog;
 
-typedef enum BOGEN_DESC
-{
-    BgNl= 0, // NIL
-    BgSy= 1, // Symbol
-    BgMo= 2, // Morphem
-    BgGr= 4, // Graph
-    BgEn= 8,// Graphende (altenativ 0 oder -1 als Folgebogen)
- }tBg;
+
 
