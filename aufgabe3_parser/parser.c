@@ -2,10 +2,18 @@
 #include <string.h>
 #include <stdlib.h>
 #include "parser.h"
-#include "lex.h"
+
 
 typedef unsigned long ul;
+extern tMorph Morph;
 
+
+tBog gBlock [];
+tBog gExpr [];
+tBog gTerm[];
+tBog gState[];
+tBog gFact[];
+tBog gCond[];
 
 tBog gProgramm[]= 
 {
@@ -21,18 +29,19 @@ tBog gBlock []=
 /* 1*/ {BgMo,{(ul)mcIdent}, NULL, 2, 0},
 /* 2*/ {BgSy,{(ul)'=' },    NULL, 3, 0},
 /* 3*/ {BgMo,{(ul)mcNum},   NULL, 4, 0},
-/* 4*/ {BgSy,{(ul)',' },    NULL, 2, 6},
-
+/* 4*/ {BgSy,{(ul)',' },    NULL, 2, 5},
+/* 5 */{BgSy,{(ul)';' },    NULL, 9,0 },
 /* 6*/ {BgSy,{(ul)zVAR},    NULL, 7, 9}, //muss Mo sein ?
 /* 7*/ {BgMo,{(ul)mcIdent}, NULL, 8, 0},
 /* 8*/ {BgSy,{(ul)','},     NULL, 7, 9},
-
-/* 9*/ {BgSy,{(ul)zPRC},    NULL,10,14},  //Symbol ?
-/* 10*/{BgMo,{(ul)mcIdent}, NULL,11, 0},
-/* 11*/{BgSy,{(ul)';'},     NULL,12, 0},
-/* 12*/{BgGr,{(ul)gBlock},  NULL,13, 0},
-/* 13*/{BgSy,{(ul)';'},     NULL, 9, 0},
-/* 14*/{BgGr,{(ul)zState},  NULL, 0, 0}
+/* 9 */{BgSy,{(ul)';' },    NULL, 10,0},
+/* 10*/ {BgSy,{(ul)zPRC},   NULL,11,15},  //Symbol ?
+/* 11*/{BgMo,{(ul)mcIdent}, NULL,12, 0},
+/* 12*/{BgSy,{(ul)';'},     NULL,13, 0},
+/* 13*/{BgGr,{(ul)gBlock},  NULL,14, 0},
+/* 14*/{BgSy,{(ul)';'},     NULL,10, 0},
+/* 15*/{BgGr,{(ul)gState},  NULL,16, 0},
+/* 16*/ {BgEn,{(ul)0 },     NULL, 0, 0}
 
 
 };
@@ -62,13 +71,13 @@ tBog gTerm[]=
 tBog gState[]= 
 {
 /* 0*/ {BgMo,{(ul)mcIdent},     NULL, 1, 3},
-/* 1*/ {BgSy,{(ul)zERG},        NULL, 2, 0} , //muss Mo oder Symbol ?
+/* 1*/ {BgSy,{(ul)':'},         NULL, 2, 0} , //muss Mo oder Symbol ?
 /* 2*/ {BgGr,{(ul)gExpr },      NULL,20, 0},
 
 /* 3*/ {BgSy,{(ul)zIF},         NULL, 4, 7},
 /* 4*/ {BgGr,{(ul)gCond},       NULL, 5, 0},  
 /* 5*/ {BgSy,{(ul)zTHN },       NULL, 6, 0},
-/* 6*/ {BgGr,{(ul)gState },     NULL,20, 0}    ,
+/* 6*/ {BgGr,{(ul)gState },     NULL,20, 0},
  
 /* 7*/ {BgSy,{(ul)zWHL},        NULL, 8,11},
 /* 8*/ {BgGr,{(ul)gCond},       NULL, 9, 0},  
@@ -77,7 +86,7 @@ tBog gState[]=
             //Begin
 /*11*/ {BgSy,{(ul)zBGN},        NULL,12,15},
 /*12*/ {BgGr,{(ul)gState },     NULL,13,14},
-/*13*/ {BgSy,{(ul)zEND},        NULL,20, 0},  
+/*13*/ {BgSy,{(ul)zEND},        NULL,20,14},  
 /*14*/ {BgSy,{(ul)';' },        NULL,12, 0},
 
 
@@ -125,3 +134,52 @@ tBog gCond [] =
 /*10*/ {BgSy,{(ul)zGE },    NULL, 5, 0}  //Frage hier
 
 };
+
+
+int pars(tBog* pGraph)
+{
+    
+    tBog* pBog=pGraph;
+    int succ=0;
+    puts("pars called");
+    if (Morph.MC==mcEmpty)Lex();
+    
+    while(1)
+    {
+        switch(pBog->BgD)   //Bogentyp
+        {
+            
+            case BgNl:succ=1; break;
+            case BgSy:succ=(Morph.Val.Symb==pBog->BgX.S);break;
+            case BgMo:succ=(Morph.MC==(tMC)pBog->BgX.M); break;
+            case BgGr:succ=pars(pBog->BgX.G); break;
+            case BgEn:puts("pars left ok");return 1; /* Ende erreichet - Erfolg */
+        }
+
+        if (succ && pBog->fx!=NULL) succ=pBog->fx();  //fx funktionpointer , wenn Bogen akzeptiert wird
+        if (!succ)/* Alternativbogen probieren */
+
+        if (pBog->iAlt != 0) //alternative bogen
+        pBog=pGraph+pBog->iAlt;
+        else {puts("pars left fail");return 0;}
+        else /* Morphem formal akzeptiert (eaten) */
+        {
+            if (pBog->BgD & BgSy || pBog->BgD & BgMo) Lex();
+            pBog=pGraph+pBog->iNext;
+        }
+    }/* while */
+}
+
+
+extern tMorph Morph;  
+
+int main(int argc, void*argv[])
+{
+  int init =initLex(argv[1]);
+  
+  int x=pars(gProgramm);
+  printf("X %d \n",x);
+  if(x==0)
+   printf("Line%4d, Col%3d: ",Morph.PosLine, Morph.PosCol);
+  return 0;
+}
