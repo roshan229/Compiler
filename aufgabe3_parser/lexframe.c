@@ -146,6 +146,7 @@ static void fslb(void)
 static void fb ()
 {
   int i,j;
+  puts(vBuf);
   switch (Z)
   {
        /*Bezeichner*/
@@ -158,6 +159,7 @@ static void fb ()
 if (i <sizeof(keyWords)/sizeof(keyWords[0])) 
         {
           //printf("Schlüsselwort gefunden \n");
+          printf("Keyboard %s \n ", vBuf);
           Morph.Val.Symb=zBGN+i;
           Morph.MC=mcSymb;  //signalisiert, dass es sich um ein Schlüsselwort handelt.
         }
