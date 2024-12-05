@@ -26,4 +26,4 @@ typedef struct BOGEN
 }tBog;
 
 
-
+int pars(tBog* pGraph);
